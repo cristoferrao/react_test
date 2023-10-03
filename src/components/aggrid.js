@@ -7,17 +7,12 @@ const Aggrid = () => {
     const gridRef = useRef(); // Optional - for accessing Grid's API
     const [rowData, setRowData] = useState(); // Set rowData to Array of Objects, one Object per Row
 
-    // Each Column Definition results in one Column.
-    const [columnDefs, setColumnDefs] = useState([
-        { field: 'make', filter: true, cellEditor: "autoComplete", editable: true },
-        { field: 'model', filter: true },
-        { field: 'price' }
-    ]);
+
 
     // DefaultColDef sets props common to all Columns
     const defaultColDef = useMemo(() => ({
         sortable: true
-    }));
+    }), []);
 
     // Example of consuming Grid Event
     const cellClickedListener = useCallback(event => {
@@ -45,14 +40,17 @@ const Aggrid = () => {
                 <AgGridReact
                     ref={gridRef} // Ref for accessing Grid's API
                     rowData={rowData} // Row Data for Rows
-                    columnDefs={columnDefs} // Column Defs for Columns
+                    columnDefs={[
+                        { field: 'make', filter: true, cellEditor: "autoComplete", editable: true },
+                        { field: 'model', filter: true },
+                        { field: 'price' }
+                    ]} // Column Defs for Columns
                     defaultColDef={defaultColDef} // Default Column Properties
                     animateRows={true} // Optional - set to 'true' to have rows animate when sorted
                     rowSelection='multiple' // Options - allows click selection of rows
-                    frameworkComponents={{
-                        autoComplete: TypeAhead
-                    }}
+
                     components={{
+                        autoComplete: TypeAhead
 
                     }}
                     onCellClicked={cellClickedListener} // Optional - registering for Grid Event
@@ -62,4 +60,4 @@ const Aggrid = () => {
     );
 }
 
-export default Aggrid;
+export default React.memo(Aggrid);

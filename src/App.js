@@ -1,18 +1,17 @@
-import logo from './logo.svg';
 import './App.css';
 import { useEffect, useState } from 'react';
+
 import axios from 'axios';
 
 import 'ag-grid-community/styles/ag-grid.css'; // Core grid CSS, always needed
 import 'ag-grid-community/styles/ag-theme-alpine.css'; // Optional theme CSS
-import Aggrid from './components/aggrid';
-import TypeAhead from './components/TypeAhead';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import 'react-bootstrap-typeahead/css/Typeahead.bs5.css';
+import useRazorpay from 'react-razorpay';
 
 const productInitialValues = {
   name: "Test Images",
@@ -32,25 +31,18 @@ const productInitialValues = {
 };
 
 
-const baseURL = "https://amruthestore.azurewebsites.net/api/";
-// const baseURL = "https://localhost:7007/api/";
+// const baseURL = "https://amruthestore.azurewebsites.net/api/";
+const baseURL = "https://localhost:7007/api/";
+
 function App() {
+
   const [imageSrc, setImageSrc] = useState(null);
   const [product, setProduct] = useState(productInitialValues)
 
   const [token, setToken] = useState("");
   useEffect(() => {
 
-    axios.post(baseURL + "Authenticate/AuthToken", {
-      userName: "admin@admin.com",
-      password: "123"
-
-    }).then(res => {
-      console.log(res.data);
-      res.data.isSuccess && setToken(res.data.token);
-    }).catch(err => {
-      console.error(err);
-    })
+    loginHandler();
     return () => {
 
     }
@@ -102,7 +94,10 @@ function App() {
 
   const handlerUploadProductImage = () => {
 
+
     const formData = new FormData();
+
+
 
     formData.append("file", product.imageFile)
     formData.append("classificationId", 10)
@@ -127,32 +122,92 @@ function App() {
     }
   }
 
+  const Razorpay = useRazorpay();
+  const [order, setOrder] = useState({
+    id: null,
+    orderId: ""
+  })
+
+  const handlePayment = () => {
+    const options = {
+      key: "rzp_test_wN0Sc7TinY22q3",
+      amount: parseInt(order.amount),
+      currency: "INR",
+      name: "Acme Corp",
+      description: order.orderId + "",
+      image: "https://example.com/your_logo",
+      order_id: order.orderId,
+      handler: (res) => {
+        console.log(res);
+
+      },
+      prefill: {
+        name: "Piyush Garg",
+        email: "youremail@example.com",
+        contact: "7972930120",
+      },
+      notes: {
+        address: "Razorpay Corporate Office",
+      },
+      theme: {
+        color: "#3399cc",
+      },
+    };
+
+    const rzpay = new Razorpay(options);
+
+    rzpay.on("", () => {
+
+    })
+    rzpay.open();
+
+  }
+
+  const OrderCall = () => {
+    axios.post("https://localhost:7007/api/app/Payments/CreatePaymentOrder",
+      {
+        billingName: "string",
+        city: "string",
+        state: "string",
+        pincode: "string",
+        country: "string",
+        billingGST: "string",
+        email: "string",
+        mobile: "string",
+        notes: "string"
+      }
+      , { headers: { Authorization: `Bearer ${token}` }, })
+      .then(res => {
+        console.log(res);
+        setOrder(res.data);
+      }).catch(err => {
+        console.log(err);
+      });
+  }
   return (
     <div className="App">
-      <Aggrid></Aggrid>
-      {/* <TypeAhead /> */}
-      {/* <header className="App-header">
-        <img
-          img={imageSrc}
-          width={100}
-          height={100}
-          alt="Test Images"
-        />
-        <input type={"file"} onChange={changeImageHandler} />
-        <button onClick={handlerUploadProductImage}>Upload</button>
-        <a
-          href={imageSrc}
-          download
-          onClick={e => download(e)}
-        >
-          <i className="fa fa-download" />
-          download
-        </a>
+      <button className='btn btn-success' type='button' onClick={loginHandler}>Login</button>
+      {/* <Aggrid></Aggrid> */}
 
-      </header> */}
+      <button onClick={OrderCall}
+      >Order</button>
 
+      <button className='m-2 btn btn-success' onClick={handlePayment}>Pay</button>
     </div>
   );
+
+  function loginHandler() {
+    axios.post(baseURL + "Authenticate/AuthToken", {
+      userName: "admin@admin.com",
+      password: "123"
+    }).then(res => {
+      console.log(res.data);
+      res.data.isSuccess && setToken(res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data))
+    }).catch(err => {
+      console.error(err);
+    });
+  }
 }
 
 export default App;
